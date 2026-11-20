@@ -54,7 +54,8 @@ For each required backend capability:
 
 ## 5. Release and deployment
 
-Deployment provider, domains, and CI are open decisions. Before release:
+Deployment provider, domains, and release automation are open decisions. The
+[CI workflow](.github/workflows/ci.yml) runs the client checks. Before release:
 
 - Build client and provider bundles separately.
 - Scan output for secret-like values.

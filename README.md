@@ -34,6 +34,10 @@ npx playwright install --only-shell chromium
 npm run test:e2e
 ```
 
+The [CI workflow](.github/workflows/ci.yml) runs these checks on pull requests
+targeting `main` and on pushes to `main`. It uses the pinned Node and npm versions
+and needs no tenant configuration.
+
 Browser checks serve the built assets on port 4173. A static host must serve
 `dist/` at `/app/` and fall back to the app's `index.html` for client routes
 under that prefix. Serve existing assets directly.
