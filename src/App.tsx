@@ -2,10 +2,18 @@ import { useEffect } from 'react'
 import type { ReactNode } from 'react'
 import { Link, Navigate, NavLink, Outlet, Route, Routes } from 'react-router'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import {
+  ConversationsScreen,
+  DocumentsScreen,
+  IndexingScreen,
+  MembersScreen,
+  OverviewScreen,
+  SettingsScreen,
+  UsageScreen,
+} from './admin-screens'
 import { AuthView } from './AuthView'
 import { useClientAccess } from './client-auth'
 import type { TenantRole } from './client-auth'
-import { previewWorkspace, summarizeDocuments } from './fixtures'
 import { canOpenScreen, groups, screens } from './navigation'
 
 function ClientShell({ role, signOut }: {
@@ -73,37 +81,6 @@ function Placeholder({ title, summary, availability }: {
   )
 }
 
-function Overview() {
-  const { bot, documents } = previewWorkspace
-  const { total, ready, indexing } = summarizeDocuments(documents)
-
-  return (
-    <>
-      <ScreenHeading title="Overview">A preview of the workspace for {bot}.</ScreenHeading>
-      <p className="notice">This workspace uses sample data. Live document data will be connected in a later phase.</p>
-      <dl className="metrics">
-        <div><dt>Documents</dt><dd>{total}</dd></div>
-        <div><dt>Ready</dt><dd>{ready}</dd></div>
-        <div><dt>Indexing</dt><dd>{indexing}</dd></div>
-      </dl>
-      <section className="panel" aria-labelledby="document-heading">
-        <div className="panel-heading">
-          <h2 id="document-heading">Sample documents</h2>
-          <Link to="/knowledge/documents">View documents</Link>
-        </div>
-        <ul className="document-list">
-          {documents.map(({ id, title, status }) => (
-            <li key={id}>
-              <span>{title}</span>
-              <span className="status" data-status={status}>{status}</span>
-            </li>
-          ))}
-        </ul>
-      </section>
-    </>
-  )
-}
-
 function NotFound() {
   return (
     <>
@@ -113,9 +90,44 @@ function NotFound() {
   )
 }
 
+function LiveRoute({ screen, role, client }: {
+  screen: { path: string }
+  role: TenantRole
+  client: SupabaseClient
+}) {
+  switch (screen.path) {
+    case 'settings':
+      return <SettingsScreen client={client} role={role} />
+    case 'conversations':
+      return <ConversationsScreen client={client} role={role} />
+    case 'usage':
+      return <UsageScreen client={client} />
+    case 'members':
+      return <MembersScreen client={client} />
+    case 'knowledge/documents':
+      return <DocumentsScreen client={client} role={role} />
+    case 'knowledge/indexing':
+      return <IndexingScreen client={client} />
+    default:
+      return null
+  }
+}
+
+const LIVE_PATHS = new Set([
+  'settings',
+  'conversations',
+  'usage',
+  'members',
+  'knowledge/documents',
+  'knowledge/indexing',
+])
+
 export function App({ client }: { client: SupabaseClient }) {
   const { access, signOut } = useClientAccess(client)
   const handleSignOut = () => void signOut()
+  useEffect(() => {
+    document.title = 'Overview | RAGbot Admin'
+  }, [])
   if (access.kind !== 'authorized') {
     return <AuthView client={client} access={access} signOut={handleSignOut} />
   }
@@ -123,12 +135,14 @@ export function App({ client }: { client: SupabaseClient }) {
   return (
     <Routes>
       <Route element={<ClientShell role={access.role} signOut={handleSignOut} />}>
-        <Route index element={<Overview />} />
+        <Route index element={<OverviewScreen client={client} />} />
         <Route path="login" element={<Navigate to="/" replace />} />
         {screens.map((screen) => (
           <Route key={screen.path} path={screen.path} element={
             canOpenScreen(screen, access.role)
-              ? <Placeholder title={screen.label} summary={screen.summary} availability={screen.availability} />
+              ? LIVE_PATHS.has(screen.path)
+                ? <LiveRoute screen={screen} role={access.role} client={client} />
+                : <Placeholder title={screen.label} summary={screen.summary} availability={screen.availability} />
               : <ScreenHeading title="Permission denied">Your role does not have access to this page.</ScreenHeading>
           } />
         ))}

@@ -11,8 +11,10 @@ passed. The first [GitHub Actions run](https://github.com/Debjoy26/ragbot-admin-
 passed for commit `328bbdc`.
 
 A2 is complete. The product owner accepted the sign-in, TOTP MFA, membership
-checks, and role guards after local validation passed. The authorized workspace
-shows sample data. A3 covers live admin features.
+checks, and role guards after local validation passed. A3 is complete. The
+client workspace now uses live tenant RPCs, RLS reads, and Storage for
+overview, settings, documents, indexing status, conversations, usage, and
+members. A4 covers the approved-answer workflow.
 
 ## Phase tracker
 
@@ -21,7 +23,7 @@ shows sample data. A3 covers live admin features.
 | A0 — decisions/backend contract | Complete | Owner accepted ADRs 0001 and 0002 after the backend source review |
 | A1 — frontend scaffold | Complete | Owner accepted the client shell and routes after lint, typecheck, unit tests, build, and browser checks passed |
 | A2 — client auth/MFA | Complete | Owner accepted after local checks and a smoke test against Supabase schema 27 passed |
-| A3 — client admin features | Not started | RPC signatures reviewed in source. Confirm target compatibility before wiring |
+| A3 — client admin features | Complete | Live overview, settings, documents, indexing, conversations, usage, and members against the pinned contract; owner acceptance pending |
 | A4 — approved knowledge workflow | Not started | Markdown baseline accepted. Gap linkage and publishing details remain open |
 | A5 — widget key lifecycle | Not started | Current widget uses public bot/configuration attributes; dedicated key is not assumed |
 | A6 — subscription integration | Not started | Current bot enablement is not a complete subscription lifecycle |
@@ -88,6 +90,29 @@ MFA are A2 work.
 The live smoke test ran against the local stack. The hosted tenant’s Auth
 redirects, email delivery, and configuration still need verification before
 connecting that tenant.
+
+## A3 validation
+
+Ran on Windows with Node `26.13.1` and npm `11.20.0`. RPC shapes were verified
+against the `ragbot-widget` source at commit `ebc75ec` (migrations
+001/003/009/010/012) before wiring. Confirm the target’s schema version and
+Auth configuration before connecting a hosted tenant.
+
+| Command | Result |
+|---|---|
+| `npm run lint` and `npm run typecheck` | Passed |
+| `npm test` | 30 unit tests passed |
+| `npm run build` | Passed |
+| `npm run test:e2e` | 16 Chromium tests passed using mocked tenant responses |
+
+A3 covers overview, settings (whitelisted patch fields plus enablement, with
+stale-version conflicts preserved for reconciliation), documents
+(register/upload/complete, retry, re-index, audited original download, delete),
+indexing status, conversations (plain-text reads plus owner/admin delete),
+usage (92-day capped ranges), and members (read-only list). Analysts are
+read-only; owner/admin mutations stay behind the backend’s membership, `aal2`,
+and quota checks. Knowledge gaps remain a deferred A4 placeholder, and widget
+and subscription screens state their deferred contracts explicitly.
 
 ## Approval boundary
 

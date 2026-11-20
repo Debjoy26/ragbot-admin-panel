@@ -11,8 +11,8 @@ database schema, visitor API, ingestion worker, or provider credentials.
 A0 is complete. See the accepted [repository boundary](docs/decisions/0001-admin-panel-boundary.md)
 and [frontend baseline](docs/decisions/0002-a0-product-and-integration-baseline.md).
 A2 is complete. The client uses tenant sign-in, TOTP MFA, and membership
-checks. A3 covers live admin features. See [status.md](status.md) and
-[plan.md](plan.md) for phase status.
+checks. A3 is complete and covers live admin features. See [status.md](status.md)
+and [plan.md](plan.md) for phase status.
 
 ## Local development
 
@@ -33,9 +33,9 @@ placeholders. The app shows a configuration error until valid settings are
 available.
 
 For a static deployment, serve that tenant’s configuration at
-`/app/tenant-config.json`. The workspace still displays bundled sample data
-once access is verified. Sessions are stored in memory, so a full reload
-requires signing in again.
+`/app/tenant-config.json`. The workspace shows live tenant data once access is
+verified. Sessions are stored in memory, so a full reload requires signing in
+again.
 
 ```sh
 npm run lint

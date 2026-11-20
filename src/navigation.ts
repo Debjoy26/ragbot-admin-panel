@@ -11,26 +11,26 @@ type Screen = {
 export const groups = [
   {
     label: 'Workspace',
-    screens: [
-      { path: 'settings', label: 'Bot settings', summary: 'Manage the bot’s appearance, instructions, and contact details.', availability: 'Settings will be available after the tenant connection is set up.' },
-      { path: 'conversations', label: 'Conversations', summary: 'Review conversations and their sources.', availability: 'Conversation records will appear after the tenant connection is set up.' },
-      { path: 'usage', label: 'Usage', summary: 'Review daily activity and estimated costs.', availability: 'Usage reports will appear after the tenant connection is set up.' },
-      { path: 'members', label: 'Members', allowedRoles: ['owner', 'admin'], summary: 'Review workspace membership and roles.', availability: 'The member list will be available after the tenant connection is set up.' },
+      screens: [
+        { path: 'settings', label: 'Bot settings', summary: 'Manage the bot’s appearance, instructions, and contact details.', availability: 'Settings load server-authoritative values with stale-version protection.' },
+        { path: 'conversations', label: 'Conversations', summary: 'Review conversations and their sources.', availability: 'Conversation records are limited to rows your role is granted.' },
+        { path: 'usage', label: 'Usage', summary: 'Review daily activity and estimated costs.', availability: 'Usage aggregates are limited to 92-day ranges.' },
+        { path: 'members', label: 'Members', allowedRoles: ['owner', 'admin'], summary: 'Review workspace membership and roles.', availability: 'The member list is read-only. Invitations and role changes need a reviewed contract.' },
     ],
   },
-  {
-    label: 'Knowledge',
-    screens: [
-      { path: 'knowledge/documents', label: 'Documents', summary: 'Manage the files your bot can use to answer questions.', availability: 'Document management will be available after the tenant connection is set up.' },
-      { path: 'knowledge/indexing', label: 'Indexing status', summary: 'Check indexing progress and see which versions are active.', availability: 'Indexing status will appear after the tenant connection is set up.' },
-      { path: 'knowledge/gaps', label: 'Knowledge gaps', summary: 'Review recurring questions that need better coverage.', availability: 'The knowledge gap report will appear after the tenant connection is set up.' },
+    {
+      label: 'Knowledge',
+      screens: [
+        { path: 'knowledge/documents', label: 'Documents', summary: 'Manage the files your bot can use to answer questions.', availability: 'Document management uses the approved tenant RPCs and Storage policies.' },
+        { path: 'knowledge/indexing', label: 'Indexing status', summary: 'Check indexing progress and see which versions are active.', availability: 'Indexing status reads job summaries and safe version progress.' },
+        { path: 'knowledge/gaps', label: 'Knowledge gaps', summary: 'Review recurring questions that need better coverage.', availability: 'Knowledge-gap review is an A4 workflow. Gap linkage and the publishing contract are still open.' },
     ],
   },
   {
     label: 'Administration',
-    screens: [
-      { path: 'widget', label: 'Widget installation', summary: 'Find the public information needed to install your bot.', availability: 'The installation snippet requires the deployment’s public configuration.' },
-      { path: 'subscription', label: 'Subscription', summary: 'View plan and subscription status.', availability: 'Subscription information is currently unavailable.' },
+      screens: [
+        { path: 'widget', label: 'Widget installation', summary: 'Find the public information needed to install your bot.', availability: 'The installation snippet uses only public embed values. Identifier rotation needs an A5 backend contract.' },
+        { path: 'subscription', label: 'Subscription', summary: 'View plan and subscription status.', availability: 'Subscription display is an A6 integration. No enforcement is claimed until the provider contract exists.' },
       { path: 'account', label: 'Account', summary: 'Review your workspace session.', availability: 'Use Sign out in the workspace header to end this session.' },
     ],
   },
