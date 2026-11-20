@@ -1,13 +1,13 @@
 # ADR 0001 — Admin Panel Repository and Trust Boundaries
 
-- **Status:** Proposed
+- **Status:** Accepted by the product owner for A0
 - **Date:** 2026-11-20
 - **Decision owners:** Product owner
 - **Context:** The RAGbot widget/backend is in a separate repository. The panel
   must serve client administrators and eventually provider staff without
   exposing cross-client credentials to browsers.
 
-## Proposal
+## Decision
 
 1. Keep this repository responsible for administration frontends and their
    documented backend integrations.
@@ -29,5 +29,3 @@
 - Provider control-plane ownership and schema remain undecided.
 - Widget keys and subscription state require backend contracts before UI
   controls can claim to manage them.
-- This ADR must be accepted or replaced by the owner before implementation
-  proceeds beyond a scaffold.

@@ -8,9 +8,35 @@ database schema, visitor API, ingestion worker, or provider credentials.
 
 ## Status
 
-The initial product and architecture documents are a proposal, not an
-implementation or an acceptance record. See [status.md](status.md) and
-[plan.md](plan.md) for open decisions and sequencing.
+A0 is complete. See the accepted [repository boundary](docs/decisions/0001-admin-panel-boundary.md)
+and [frontend baseline](docs/decisions/0002-a0-product-and-integration-baseline.md).
+A1 is complete. The client scaffold is available locally, and A2 covers tenant
+sign-in and MFA. See [status.md](status.md) and [plan.md](plan.md).
+
+## Local development
+
+Use Node `26.13.1` and npm `11.20.0`.
+
+```sh
+npm ci
+npm run dev
+```
+
+Open `http://127.0.0.1:5173/app/`. The client shell uses bundled sample data
+and requires no tenant configuration.
+
+```sh
+npm run lint
+npm run typecheck
+npm test
+npm run build
+npx playwright install --only-shell chromium
+npm run test:e2e
+```
+
+Browser checks serve the built assets on port 4173. A static host must serve
+`dist/` at `/app/` and fall back to the app's `index.html` for client routes
+under that prefix. Serve existing assets directly.
 
 ## Documents
 
@@ -20,6 +46,7 @@ implementation or an acceptance record. See [status.md](status.md) and
 - [UI_SCHEMA.md](UI_SCHEMA.md): routes, screens, and interaction states
 - [plan.md](plan.md): staged implementation plan
 - [status.md](status.md): current decisions and progress
+- [A0 backend contract review](docs/backend-contract-a0.md): source revision, client RPCs, and integration gaps
 
 ## Backend source of truth
 

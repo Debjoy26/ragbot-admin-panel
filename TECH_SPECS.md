@@ -137,6 +137,8 @@ safe correlation identifier when available.
 
 ## 7. Validation commands
 
-The repository framework and scripts have not yet been selected. Define exact
-install, lint, typecheck, unit, build, and browser-test commands after the
-scaffold is approved. Do not report unconfigured commands as passing gates.
+Install the locked dependencies with `npm ci`. Run `npm run lint`,
+`npm run typecheck`, `npm test`, and `npm run build` from the repository root.
+Install the Chromium test browser with `npx playwright install --only-shell chromium` and run
+`npm run test:e2e` against the production build. See [README.md](README.md)
+for toolchain pins and the local preview address.
