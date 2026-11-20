@@ -11,10 +11,10 @@ passed. The first [GitHub Actions run](https://github.com/Debjoy26/ragbot-admin-
 passed for commit `328bbdc`.
 
 A2 is complete. The product owner accepted the sign-in, TOTP MFA, membership
-checks, and role guards after local validation passed. A3 is complete. The
-client workspace now uses live tenant RPCs, RLS reads, and Storage for
-overview, settings, documents, indexing status, conversations, usage, and
-members. A4 covers the approved-answer workflow.
+checks, and role guards after local validation passed. The product owner accepted
+the live overview, settings, documents, indexing status, conversations, usage,
+and members integration after local validation passed. A4 covers the
+approved-answer workflow.
 
 ## Phase tracker
 
@@ -23,7 +23,7 @@ members. A4 covers the approved-answer workflow.
 | A0 — decisions/backend contract | Complete | Owner accepted ADRs 0001 and 0002 after the backend source review |
 | A1 — frontend scaffold | Complete | Owner accepted the client shell and routes after lint, typecheck, unit tests, build, and browser checks passed |
 | A2 — client auth/MFA | Complete | Owner accepted after local checks and a smoke test against Supabase schema 27 passed |
-| A3 — client admin features | Complete | Live overview, settings, documents, indexing, conversations, usage, and members against the pinned contract; owner acceptance pending |
+| A3 — client admin features | Complete | Owner accepted the live admin integration after lint, typecheck, unit tests, build, and browser checks passed |
 | A4 — approved knowledge workflow | Not started | Markdown baseline accepted. Gap linkage and publishing details remain open |
 | A5 — widget key lifecycle | Not started | Current widget uses public bot/configuration attributes; dedicated key is not assumed |
 | A6 — subscription integration | Not started | Current bot enablement is not a complete subscription lifecycle |
