@@ -1,8 +1,11 @@
+import type { TenantRole } from './client-auth'
+
 type Screen = {
   readonly path: string
   readonly label: string
   readonly summary: string
   readonly availability: string
+  readonly allowedRoles?: readonly TenantRole[]
 }
 
 export const groups = [
@@ -12,7 +15,7 @@ export const groups = [
       { path: 'settings', label: 'Bot settings', summary: 'Manage the bot’s appearance, instructions, and contact details.', availability: 'Settings will be available after the tenant connection is set up.' },
       { path: 'conversations', label: 'Conversations', summary: 'Review conversations and their sources.', availability: 'Conversation records will appear after the tenant connection is set up.' },
       { path: 'usage', label: 'Usage', summary: 'Review daily activity and estimated costs.', availability: 'Usage reports will appear after the tenant connection is set up.' },
-      { path: 'members', label: 'Members', summary: 'Review workspace membership and roles.', availability: 'The member list will be available after the tenant connection is set up.' },
+      { path: 'members', label: 'Members', allowedRoles: ['owner', 'admin'], summary: 'Review workspace membership and roles.', availability: 'The member list will be available after the tenant connection is set up.' },
     ],
   },
   {
@@ -28,9 +31,13 @@ export const groups = [
     screens: [
       { path: 'widget', label: 'Widget installation', summary: 'Find the public information needed to install your bot.', availability: 'The installation snippet requires the deployment’s public configuration.' },
       { path: 'subscription', label: 'Subscription', summary: 'View plan and subscription status.', availability: 'Subscription information is currently unavailable.' },
-      { path: 'account', label: 'Account', summary: 'Manage your session and sign-in security.', availability: 'Account details will be available once sign-in is connected.' },
+      { path: 'account', label: 'Account', summary: 'Review your workspace session.', availability: 'Use Sign out in the workspace header to end this session.' },
     ],
   },
 ] as const satisfies readonly { readonly label: string; readonly screens: readonly Screen[] }[]
 
 export const screens: readonly Screen[] = groups.flatMap<Screen>((group) => group.screens)
+
+export function canOpenScreen(screen: Screen, role: TenantRole) {
+  return !screen.allowedRoles || screen.allowedRoles.includes(role)
+}

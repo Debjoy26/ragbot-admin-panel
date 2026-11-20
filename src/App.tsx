@@ -1,10 +1,17 @@
 import { useEffect } from 'react'
 import type { ReactNode } from 'react'
-import { Link, NavLink, Outlet, Route, Routes } from 'react-router'
+import { Link, Navigate, NavLink, Outlet, Route, Routes } from 'react-router'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { AuthView } from './AuthView'
+import { useClientAccess } from './client-auth'
+import type { TenantRole } from './client-auth'
 import { previewWorkspace, summarizeDocuments } from './fixtures'
-import { groups, screens } from './navigation'
+import { canOpenScreen, groups, screens } from './navigation'
 
-function ClientShell() {
+function ClientShell({ role, signOut }: {
+  role: TenantRole
+  signOut: () => void
+}) {
   return (
     <div className="shell">
       <a className="skip-link" href="#main-content">Skip to content</a>
@@ -16,7 +23,7 @@ function ClientShell() {
             <div key={group.label} className="nav-group">
               <h2>{group.label}</h2>
               <ul>
-                {group.screens.map(({ path, label }) => (
+                {group.screens.filter((screen) => canOpenScreen(screen, role)).map(({ path, label }) => (
                   <li key={path}><NavLink to={path}>{label}</NavLink></li>
                 ))}
               </ul>
@@ -26,8 +33,8 @@ function ClientShell() {
       </aside>
       <div className="workspace">
         <header className="topbar">
-          <span>Client workspace</span>
-          <NavLink to="/login">Sign-in setup</NavLink>
+          <span>Client workspace · {role}</span>
+          <button type="button" onClick={signOut}>Sign out</button>
         </header>
         <main id="main-content" className="main" tabIndex={-1}>
           <Outlet />
@@ -73,7 +80,7 @@ function Overview() {
   return (
     <>
       <ScreenHeading title="Overview">A preview of the workspace for {bot}.</ScreenHeading>
-      <p className="notice">This workspace uses sample data. It is disconnected from tenant services.</p>
+      <p className="notice">This workspace uses sample data. Live document data will be connected in a later phase.</p>
       <dl className="metrics">
         <div><dt>Documents</dt><dd>{total}</dd></div>
         <div><dt>Ready</dt><dd>{ready}</dd></div>
@@ -106,21 +113,23 @@ function NotFound() {
   )
 }
 
-export function App() {
+export function App({ client }: { client: SupabaseClient }) {
+  const { access, signOut } = useClientAccess(client)
+  const handleSignOut = () => void signOut()
+  if (access.kind !== 'authorized') {
+    return <AuthView client={client} access={access} signOut={handleSignOut} />
+  }
+
   return (
     <Routes>
-      <Route element={<ClientShell />}>
+      <Route element={<ClientShell role={access.role} signOut={handleSignOut} />}>
         <Route index element={<Overview />} />
-        <Route path="login" element={
-          <Placeholder
-            title="Sign in"
-            summary="Access your client workspace."
-            availability="Sign-in and multi-factor authentication will be available once the tenant identity setup is connected."
-          />
-        } />
-        {screens.map(({ path, label, summary, availability }) => (
-          <Route key={path} path={path} element={
-            <Placeholder title={label} summary={summary} availability={availability} />
+        <Route path="login" element={<Navigate to="/" replace />} />
+        {screens.map((screen) => (
+          <Route key={screen.path} path={screen.path} element={
+            canOpenScreen(screen, access.role)
+              ? <Placeholder title={screen.label} summary={screen.summary} availability={screen.availability} />
+              : <ScreenHeading title="Permission denied">Your role does not have access to this page.</ScreenHeading>
           } />
         ))}
         <Route path="*" element={<NotFound />} />

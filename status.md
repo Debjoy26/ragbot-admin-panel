@@ -7,8 +7,12 @@ frontend baseline. The [backend contract review](docs/backend-contract-a0.md)
 is pinned to `ragbot-widget` commit `ebc75ec` and schema version 27.
 
 A1 is complete. The product owner accepted the scaffold after its local checks
-passed. The client shell at `/app/` runs on bundled sample data. A2 covers
-client sign-in, MFA, and membership checks.
+passed. The first [GitHub Actions run](https://github.com/Debjoy26/ragbot-admin-panel/actions/runs/44806533522)
+passed for commit `328bbdc`.
+
+A2 is complete. The product owner accepted the sign-in, TOTP MFA, membership
+checks, and role guards after local validation passed. The authorized workspace
+shows sample data. A3 covers live admin features.
 
 ## Phase tracker
 
@@ -16,7 +20,7 @@ client sign-in, MFA, and membership checks.
 |---|---|---|
 | A0 — decisions/backend contract | Complete | Owner accepted ADRs 0001 and 0002 after the backend source review |
 | A1 — frontend scaffold | Complete | Owner accepted the client shell and routes after lint, typecheck, unit tests, build, and browser checks passed |
-| A2 — client auth/MFA | Not started | Must follow tenant Supabase Auth and `aal2` contract |
+| A2 — client auth/MFA | Complete | Owner accepted after local checks and a smoke test against Supabase schema 27 passed |
 | A3 — client admin features | Not started | RPC signatures reviewed in source. Confirm target compatibility before wiring |
 | A4 — approved knowledge workflow | Not started | Markdown baseline accepted. Gap linkage and publishing details remain open |
 | A5 — widget key lifecycle | Not started | Current widget uses public bot/configuration attributes; dedicated key is not assumed |
@@ -70,6 +74,20 @@ Ran on Windows with Node `26.13.1` and npm `11.20.0`.
 Playwright needed an unrestricted local run on Windows to shut down the preview
 server. The checks cover the scaffold and sample data. Tenant authentication and
 MFA are A2 work.
+
+## A2 validation
+
+| Check | Result |
+|---|---|
+| `npm run lint` and `npm run typecheck` | Passed |
+| `npm test` | 9 unit tests passed |
+| `npm run build` | Passed |
+| `npm run test:e2e` | 12 Chromium tests passed using mocked tenant responses |
+| Loopback Supabase smoke test | Schema 27. Verified a real magic-link callback, denial at `aal1`, TOTP enrollment, access at `aal2`, analyst role checks, revocation, and sign-out. Removed the disposable account and membership afterward |
+
+The live smoke test ran against the local stack. The hosted tenant’s Auth
+redirects, email delivery, and configuration still need verification before
+connecting that tenant.
 
 ## Approval boundary
 

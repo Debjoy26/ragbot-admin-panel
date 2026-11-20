@@ -30,6 +30,13 @@ against the current `ragbot-widget` source before coding.
 
 Provider identity provider, session format, and control API are open decisions.
 
+## Client sign-in and MFA implementation
+
+- Load public project configuration from `/app/tenant-config.json` before creating the browser SDK client.
+- Send email sign-in links for existing users with `shouldCreateUser: false`. Accept invite and magic-link callbacks on the panel origin. Remove callback tokens from the browser URL before rendering or making requests.
+- Keep the session in memory. Validate the user with Auth and confirm `aal2` and the active role through `is_active_member_mfa` before rendering the client shell. Use `is_active_member` to gate TOTP enrollment and challenges at `aal1`.
+- Recheck access on session changes, on window focus, and every 30 seconds while a session exists. Unmount the private shell when access expires, membership is lost, or verification fails. The backend evaluates authorization on its own requests.
+
 ## 3. Backend integration
 
 The client UI may use only:

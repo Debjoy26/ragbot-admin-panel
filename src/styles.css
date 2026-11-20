@@ -82,3 +82,18 @@ h1 { margin: 0; font-size: clamp(2rem, 5vw, 3.35rem); line-height: 1.1; letter-s
   .brand { margin-bottom: .7rem; }
   .nav-group { margin: 0; }
 }
+
+.auth-page { min-height: 100vh; display: grid; place-items: center; padding: 1.25rem; }
+.auth-panel { width: min(100%, 27rem); padding: clamp(1rem, 6vw, 2rem); }
+.auth-panel h1 { font-size: clamp(1.75rem, 6vw, 2.4rem); }
+.auth-panel .auth-brand { margin: 0 0 1rem; color: #236148; font-weight: 700; }
+.auth-panel p, .auth-panel details { margin: 1rem 0; }
+.auth-panel form { display: grid; gap: .6rem; margin: 1rem 0; }
+.auth-panel label { font-weight: 650; }
+.auth-panel input, .auth-panel select { width: 100%; padding: .6rem; border: 1px solid #557166; border-radius: .35rem; font: inherit; }
+.auth-panel button, .topbar button { padding: .55rem .8rem; border: 1px solid #17372d; border-radius: .35rem; background: #17372d; color: white; font: inherit; cursor: pointer; }
+.auth-panel button:disabled { opacity: .65; cursor: wait; }
+.auth-panel .auth-secondary { color: #17372d; background: #fff; }
+.auth-panel [role="alert"] { color: #8c310a; }
+.auth-qr { width: min(100%, 12rem); height: auto; display: block; }
+.auth-panel code { overflow-wrap: anywhere; }
