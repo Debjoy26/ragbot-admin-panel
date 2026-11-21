@@ -4,6 +4,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { TenantRole } from './client-auth'
 import {
   addDocumentVersion,
+  approvedAnswerBody,
+  approvedAnswerTitle,
   buildSettingsPatch,
   completeUpload,
   deleteConversation,
@@ -15,6 +17,7 @@ import {
   errorMessage,
   getSettings,
   jobSummary,
+  knowledgeGaps,
   listBots,
   listConversations,
   listMembers,
@@ -26,6 +29,7 @@ import {
   retryVersion,
   setBotEnabled,
   shortId,
+  suggestCoveringDocuments,
   toISODate,
   toTenantError,
   updateSettings,
@@ -39,6 +43,7 @@ import type {
   DocumentStatusRow,
   EditableSettingsKey,
   JobSummaryRow,
+  KnowledgeGapRow,
   MemberRow,
   MessageRow,
   TenantError,
@@ -1252,6 +1257,278 @@ export function MembersScreen({ client }: { client: SupabaseClient }) {
           </div>
         )}
       </section>
+    </>
+  )
+}
+
+export function KnowledgeGapsScreen({ client, role }: { client: SupabaseClient; role: TenantRole }) {
+  const [reloadKey, reload] = useReload()
+  const { bots, error: botsError } = useBotList(client, reloadKey)
+  useEffect(() => {
+    document.title = 'Knowledge gaps | RAGbot Admin'
+  }, [])
+  const [targetBotId, setTargetBotId] = useState('')
+  const targetBot = useSelectedBot(bots, targetBotId, setTargetBotId)
+  const [to, setTo] = useState(() => toISODate(new Date()))
+  const [from, setFrom] = useState(() => toISODate(new Date(Date.now() - 29 * 24 * 3600 * 1000)))
+  const [limit, setLimit] = useState(50)
+  const [rows, setRows] = useState<KnowledgeGapRow[] | null>(null)
+  const [error, setError] = useState<TenantError | null>(null)
+  const [formError, setFormError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [search, setSearch] = useState('')
+  const [selectedKey, setSelectedKey] = useState('')
+  const [documents, setDocuments] = useState<DocumentStatusRow[] | null>(null)
+  const [title, setTitle] = useState('')
+  const [answer, setAnswer] = useState('')
+  const [approved, setApproved] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<TenantError | null>(null)
+  const [submitNotice, setSubmitNotice] = useState('')
+  const canMutate = role === 'owner' || role === 'admin'
+
+  async function load(event?: FormEvent<HTMLFormElement>) {
+    event?.preventDefault()
+    setFormError('')
+    setError(null)
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to) || from > to) {
+      setFormError('Use a valid from/to date range.')
+      return
+    }
+    const days = Math.round((new Date(to).getTime() - new Date(from).getTime()) / 86400000) + 1
+    if (days > 92) {
+      setFormError('The range must not exceed 92 days.')
+      return
+    }
+    if (!Number.isInteger(limit) || limit < 1 || limit > 200) {
+      setFormError('The limit must be between 1 and 200.')
+      return
+    }
+    setLoading(true)
+    try {
+      setRows(await knowledgeGaps(client, from, to, limit))
+      setSelectedKey('')
+      setSubmitNotice('')
+    } catch (failure) {
+      setError(toTenantError(failure))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    void load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reloadKey])
+
+  useEffect(() => {
+    if (!targetBot) return
+    let cancelled = false
+    documentStatus(client, targetBot.id, 200, 0)
+      .then((page) => {
+        if (!cancelled) setDocuments(page)
+      })
+      .catch(() => {
+        if (!cancelled) setDocuments(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [client, targetBot])
+
+  const filtered = (rows ?? []).filter((row) => {
+    const query = search.trim().toLowerCase()
+    if (!query) return true
+    return row.question.toLowerCase().includes(query) || row.handoff_reason.toLowerCase().includes(query)
+  })
+  const selected = filtered.find((row) => row.handoff_reason + '|' + row.question === selectedKey) ?? null
+  const covering = selected ? suggestCoveringDocuments(documents ?? [], selected.question) : []
+
+  function select(row: KnowledgeGapRow) {
+    const key = row.handoff_reason + '|' + row.question
+    setSelectedKey(key)
+    setTitle(approvedAnswerTitle(row.question))
+    setAnswer('')
+    setApproved(false)
+    setSubmitError(null)
+    setSubmitNotice('')
+  }
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!selected || !targetBot || submitting) return
+    setSubmitError(null)
+    setSubmitNotice('')
+    if (title.trim() === '') {
+      setSubmitError(toTenantError({ code: '22023', message: 'Title is required' }))
+      return
+    }
+    if (answer.trim() === '') {
+      setSubmitError(toTenantError({ code: '22023', message: 'An approved answer is required' }))
+      return
+    }
+    if (!approved) {
+      setSubmitError(toTenantError({ code: '22023', message: 'Confirm human approval before submitting' }))
+      return
+    }
+    setSubmitting(true)
+    try {
+      const body = approvedAnswerBody({
+        question: selected.question,
+        handoffReason: selected.handoff_reason,
+        occurrences: selected.occurrences,
+        lastSeen: selected.last_seen,
+        answer,
+      })
+      const file = new File([body], 'approved-answer.md', { type: 'text/markdown' })
+      const registered = await registerDocument(client, targetBot.id, title.trim(), 'text/markdown', file.size, 'public_answer')
+      await uploadKnowledgeFile(client, registered.storage_path, file, 'text/markdown')
+      await completeUpload(client, registered.version_id)
+      setSubmitNotice('Upload queued for indexing as "' + title.trim() + '". Track activation in Documents and Indexing status. It is not retrievable until the backend confirms activation.')
+      setAnswer('')
+      setApproved(false)
+    } catch (failure) {
+      setSubmitError(toTenantError(failure))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  if (botsError) return <ErrorBox error={botsError} onRetry={reload} />
+
+  return (
+    <>
+      <div className="screen-heading">
+        <h1>Knowledge gaps</h1>
+        <p>Recurring unanswered questions. Approved answers become ordinary Markdown documents and are retrievable only after backend activation.</p>
+      </div>
+      <section className="panel" aria-labelledby="gaps-filter-heading">
+        <h2 id="gaps-filter-heading">Range</h2>
+        <form onSubmit={(event) => void load(event)}>
+          <div className="form-grid">
+            <div className="field">
+              <label htmlFor="gaps-from">From</label>
+              <input id="gaps-from" type="date" value={from} onChange={(event) => setFrom(event.target.value)} />
+            </div>
+            <div className="field">
+              <label htmlFor="gaps-to">To</label>
+              <input id="gaps-to" type="date" value={to} onChange={(event) => setTo(event.target.value)} />
+            </div>
+            <div className="field">
+              <label htmlFor="gaps-limit">Limit (1–200)</label>
+              <input
+                id="gaps-limit"
+                type="number"
+                min={1}
+                max={200}
+                value={limit}
+                onChange={(event) => setLimit(Number(event.target.value))}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="gaps-search">Search</label>
+              <input id="gaps-search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Filter by question or reason" />
+            </div>
+          </div>
+          {formError && (
+            <p role="alert" className="field-error">
+              {formError}
+            </p>
+          )}
+          <button disabled={loading}>{loading ? 'Loading…' : 'Load gaps'}</button>
+        </form>
+      </section>
+      <section className="panel" aria-labelledby="gaps-results-heading">
+        <h2 id="gaps-results-heading">Recurring questions</h2>
+        {error && <ErrorBox error={error} onRetry={() => void load()} />}
+        {!error && !rows && <Loading label="Loading knowledge gaps…" />}
+        {!error && rows && filtered.length === 0 && <Empty text="No knowledge gaps in this range." />}
+        {!error && rows && filtered.length > 0 && (
+          <div className="table-wrap">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th scope="col">Question</th>
+                  <th scope="col">Reason</th>
+                  <th scope="col">Count</th>
+                  <th scope="col">Last seen</th>
+                  <th scope="col">Review</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.slice(0, 200).map((row) => {
+                  const key = row.handoff_reason + '|' + row.question
+                  return (
+                    <tr key={key}>
+                      <td>{row.question}</td>
+                      <td>{row.handoff_reason}</td>
+                      <td>{row.occurrences}</td>
+                      <td>{row.last_seen ? formatDateTime(row.last_seen) : '—'}</td>
+                      <td>
+                        <button type="button" aria-current={key === selectedKey ? 'true' : undefined} onClick={() => select(row)}>
+                          Select
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+      {selected && (
+        <section className="panel" aria-labelledby="gap-detail-heading" aria-live="polite">
+          <h2 id="gap-detail-heading">Review selected gap</h2>
+          <p className="hint">
+            {selected.occurrences}× · {selected.handoff_reason} · last seen {selected.last_seen ? formatDateTime(selected.last_seen) : '—'}
+          </p>
+          <p>{selected.question}</p>
+          {covering.length > 0 && (
+            <p className="hint">Possible covering documents (heuristic title match, not a backend link): {covering.map((doc) => doc.title).join('; ')}</p>
+          )}
+          {!canMutate && <p className="hint">Analysts can review gaps but cannot submit approved answers.</p>}
+          {canMutate && (
+            <form onSubmit={(event) => void submit(event)}>
+              <div className="form-grid">
+                <div className="field">
+                  <label htmlFor="gap-target-bot">Target bot</label>
+                  <select id="gap-target-bot" value={targetBot?.id ?? ''} onChange={(event) => setTargetBotId(event.target.value)}>
+                    {(bots ?? []).map((bot) => (
+                      <option key={bot.id} value={bot.id}>
+                        {bot.slug}
+                        {bot.display_name ? ' — ' + bot.display_name : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="hint">Approved answers are stored with disclosure “public answer” so future retrieval can cite them.</p>
+                </div>
+                <div className="field">
+                  <label htmlFor="gap-answer-title">Document title</label>
+                  <input id="gap-answer-title" value={title} maxLength={200} onChange={(event) => setTitle(event.target.value)} />
+                </div>
+              </div>
+              <div className="field">
+                <label htmlFor="gap-answer-body">Approved answer (Markdown)</label>
+                <textarea id="gap-answer-body" rows={8} value={answer} onChange={(event) => setAnswer(event.target.value)} />
+              </div>
+              <div className="field">
+                <label htmlFor="gap-approved">
+                  <input id="gap-approved" type="checkbox" checked={approved} onChange={(event) => setApproved(event.target.checked)} />
+                  {' '}Human review complete — submit as approved knowledge
+                </label>
+              </div>
+              {submitError && <ErrorBox error={submitError} />}
+              {submitNotice && (
+                <p role="status" className="notice">
+                  {submitNotice}
+                </p>
+              )}
+              <button disabled={submitting || !targetBot}>{submitting ? 'Submitting…' : 'Submit approved answer'}</button>
+            </form>
+          )}
+        </section>
+      )}
     </>
   )
 }

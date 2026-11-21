@@ -13,8 +13,10 @@ passed for commit `328bbdc`.
 A2 is complete. The product owner accepted the sign-in, TOTP MFA, membership
 checks, and role guards after local validation passed. The product owner accepted
 the live overview, settings, documents, indexing status, conversations, usage,
-and members integration after local validation passed. A4 covers the
-approved-answer workflow.
+and members integration after local validation passed.
+A4 is complete. The knowledge-gap review and approved-answer workflow are
+implemented against the reviewed `knowledge_gaps` report plus the ordinary
+Markdown document pipeline, pending owner acceptance of the local validation.
 
 ## Phase tracker
 
@@ -24,7 +26,7 @@ approved-answer workflow.
 | A1 — frontend scaffold | Complete | Owner accepted the client shell and routes after lint, typecheck, unit tests, build, and browser checks passed |
 | A2 — client auth/MFA | Complete | Owner accepted after local checks and a smoke test against Supabase schema 27 passed |
 | A3 — client admin features | Complete | Owner accepted the live admin integration after lint, typecheck, unit tests, build, and browser checks passed |
-| A4 — approved knowledge workflow | Not started | Markdown baseline accepted. Gap linkage and publishing details remain open |
+| A4 — approved knowledge workflow | Complete | Gap review plus Markdown approved-answer submission; pending owner acceptance of the local validation |
 | A5 — widget key lifecycle | Not started | Current widget uses public bot/configuration attributes; dedicated key is not assumed |
 | A6 — subscription integration | Not started | Current bot enablement is not a complete subscription lifecycle |
 | A7 — provider administration | Not started | Provider identity/API/registry design is open |
@@ -40,7 +42,10 @@ approved-answer workflow.
    authoritative enforcement location.
 6. Public widget-key format, hashing, hostname restriction, rotation, and
    revocation behavior.
-7. Define how approved Markdown answers link to knowledge gaps and how citations identify them before A4.
+7. Resolved for A4 by convention: approved answers link to a gap through the
+   `Approved answer — <question>` title plus a source-gap blockquote in the
+   Markdown body; covering-document suggestions are a title heuristic only.
+   Citations resolve through ordinary retrieval only after backend activation.
 8. Define the contract for in-panel member invitations and changes when scheduled.
 9. Confirm knowledge-gap retention and any additional privacy requirements for analyst access.
 10. Scope later UI localization beyond the initial English UI.
@@ -50,7 +55,9 @@ approved-answer workflow.
 
 - `ragbot-widget` owns tenant migrations and direct-Supabase admin security.
 - Admin RPC names, arguments, and role rules are recorded in the pinned review.
-- Knowledge-gap reporting and generic Markdown ingestion exist in source. A dedicated answer-publishing flow remains open.
+- Knowledge-gap reporting and generic Markdown ingestion exist in source.
+  A4 submits approved answers through that ordinary document pipeline; no
+  dedicated answer-publishing RPC is assumed.
 - Widget identifier rotation/revocation and subscription lifecycle are not
   assumed implemented.
 - No provider control plane is assumed to exist.
@@ -111,8 +118,31 @@ stale-version conflicts preserved for reconciliation), documents
 indexing status, conversations (plain-text reads plus owner/admin delete),
 usage (92-day capped ranges), and members (read-only list). Analysts are
 read-only; owner/admin mutations stay behind the backend’s membership, `aal2`,
-and quota checks. Knowledge gaps remain a deferred A4 placeholder, and widget
-and subscription screens state their deferred contracts explicitly.
+and quota checks. Widget and subscription screens state their deferred
+contracts explicitly.
+
+## A4 validation
+
+Ran on Windows with Node `26.13.1` and npm `11.20.0`. The `knowledge_gaps`
+shape follows the pinned `ragbot-widget` review; approved answers reuse the
+ordinary document pipeline, so no new backend contract is assumed. Confirm the
+target’s schema version and Auth configuration before connecting a hosted tenant.
+
+| Command | Result |
+|---|---|
+| `npm run lint` and `npm run typecheck` | Passed |
+| `npm test` | 33 unit tests passed |
+| `npm run build` | Passed |
+| `npm run test:e2e` | 18 Chromium tests passed using mocked tenant responses |
+
+A4 covers gap review (92-day capped ranges, limit 1–200, search, pagination
+guard) plus an owner/admin approved-answer form (title, Markdown body, explicit
+human-review checkbox) that registers, uploads, and completes an ordinary
+`public_answer` Markdown document. The submission notice states the content is
+queued and not retrievable until backend activation; Documents and Indexing
+status remain the activation source of truth. Analysts review gaps read-only.
+Gap-to-answer linkage is the title plus source-gap blockquote convention, and
+covering-document hints are a local title heuristic, not a backend link.
 
 ## Approval boundary
 

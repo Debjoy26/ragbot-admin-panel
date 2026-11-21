@@ -11,7 +11,9 @@ database schema, visitor API, ingestion worker, or provider credentials.
 A0 is complete. See the accepted [repository boundary](docs/decisions/0001-admin-panel-boundary.md)
 and [frontend baseline](docs/decisions/0002-a0-product-and-integration-baseline.md).
 A2 is complete. The client uses tenant sign-in, TOTP MFA, and membership
-checks. A3 is complete and covers live admin features. See [status.md](status.md)
+checks. A3 is complete and covers live admin features. A4 is complete and
+covers knowledge-gap review plus approved-answer submission through the
+ordinary document pipeline. See [status.md](status.md)
 and [plan.md](plan.md) for phase status.
 
 ## Local development

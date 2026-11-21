@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import {
+  approvedAnswerBody,
+  approvedAnswerTitle,
   buildSettingsPatch,
   draftFromSettings,
   errorMessage,
+  knowledgeGaps,
   mediaTypeForFile,
   shortId,
+  suggestCoveringDocuments,
   toISODate,
   toTenantError,
 } from './tenant-api'
@@ -118,5 +122,34 @@ describe('helpers', () => {
   it('formats helpers without secrets', () => {
     expect(shortId('abcdef123456')).toBe('abcdef12')
     expect(toISODate(new Date('2026-11-01T00:00:00Z'))).toBe('2026-11-01')
+  })
+})
+
+describe('knowledge gaps', () => {
+  it('builds an approved-answer title and body by convention', () => {
+    expect(approvedAnswerTitle('  What are your hours?  ')).toBe('Approved answer — What are your hours?')
+    const body = approvedAnswerBody({
+      question: 'What are your hours?',
+      handoffReason: 'unknown_hours',
+      occurrences: 12,
+      lastSeen: '2026-11-10T10:05:00Z',
+      answer: 'We are open weekdays 9 to 5.',
+    })
+    expect(body).toContain('Source gap: "What are your hours?"')
+    expect(body).toContain('Not active until the backend confirms activation')
+    expect(body).toContain('We are open weekdays 9 to 5.')
+  })
+
+  it('suggests possible covering documents as a heuristic only', () => {
+    const docs = [{ title: 'Approved answer — What are your hours?' }, { title: 'Unrelated billing' }]
+    expect(suggestCoveringDocuments(docs, 'What are your hours?')).toHaveLength(1)
+    expect(suggestCoveringDocuments(docs, 'Hi')).toEqual([])
+  })
+
+  it('rejects gap ranges and limits before calling the backend', async () => {
+    const client = { rpc: () => { throw new Error('must not call') } }
+    await expect(knowledgeGaps(client as never, '2026-12-31', '2026-01-01')).rejects.toMatchObject({ kind: 'invalid-input' })
+    await expect(knowledgeGaps(client as never, '2026-01-01', '2026-12-31')).rejects.toMatchObject({ kind: 'invalid-input' })
+    await expect(knowledgeGaps(client as never, '2026-01-01', '2026-01-02', 0)).rejects.toMatchObject({ kind: 'invalid-input' })
   })
 })

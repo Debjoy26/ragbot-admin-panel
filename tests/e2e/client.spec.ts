@@ -64,6 +64,29 @@ test('keeps analysts read-only on documents and out of members', async ({ page }
   await expect(page.getByRole('heading', { name: 'Permission denied' })).toBeVisible()
 })
 
+test('reviews knowledge gaps and queues an approved answer', async ({ page }) => {
+  await openWorkspace(page, '/app/knowledge/gaps')
+  await expect(page.getByRole('heading', { name: 'Knowledge gaps' })).toBeVisible()
+  await expect(page.getByRole('cell', { name: 'What are your holiday hours?' })).toBeVisible()
+
+  await page.getByRole('button', { name: 'Select' }).first().click()
+  await expect(page.getByRole('heading', { name: 'Review selected gap' })).toBeVisible()
+  await page.getByLabel('Approved answer (Markdown)').fill('We are open holidays 10 to 2.')
+  await page.getByLabel('Human review complete').check()
+  await page.getByRole('button', { name: 'Submit approved answer' }).click()
+  await expect(page.getByRole('status')).toContainText('queued for indexing')
+  await expect(page.getByRole('status')).toContainText('not retrievable until')
+})
+
+test('keeps analysts read-only on knowledge gaps', async ({ page }) => {
+  await mockTenant(page, { role: 'analyst' })
+  await page.goto(signInLink('/app/knowledge/gaps'))
+  await expect(page.getByRole('cell', { name: 'What are your holiday hours?' })).toBeVisible()
+  await page.getByRole('button', { name: 'Select' }).first().click()
+  await expect(page.getByText('Analysts can review gaps but cannot submit')).toBeVisible()
+  await expect(page.getByLabel('Approved answer (Markdown)')).toHaveCount(0)
+})
+
 test('serves a deep link, protects it after reload, and excludes provider pages', async ({ page, request }) => {
   await openWorkspace(page, '/app/knowledge/gaps')
   await expect(page).toHaveTitle('Knowledge gaps | RAGbot Admin')

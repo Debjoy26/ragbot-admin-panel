@@ -131,6 +131,11 @@ const usageRows = [
   { usage_day: '2026-11-14', bot_id: bot.id, operation: 'chat', event_count: 12, input_tokens: 1200, output_tokens: 800, estimated_cost: 0.012 },
 ]
 
+const gapRows = [
+  { handoff_reason: 'unknown_hours', question: 'What are your holiday hours?', occurrences: 12, last_seen: '2026-11-10T10:05:00Z' },
+  { handoff_reason: 'missing_policy', question: 'What is your refund policy?', occurrences: 7, last_seen: '2026-11-09T09:00:00Z' },
+]
+
 const OWNER_ADMIN_RPCS = new Set([
   'admin_update_settings',
   'admin_set_bot_enabled',
@@ -253,6 +258,8 @@ export async function mockTenant(page: Page, options: {
         return respond(jobRows)
       case '/rest/v1/rpc/usage_daily_summary':
         return respond(usageRows)
+      case '/rest/v1/rpc/knowledge_gaps':
+        return respond(gapRows)
       case '/rest/v1/conversations':
         return respond(conversationRows)
       case '/rest/v1/messages':

@@ -6,6 +6,7 @@ import {
   ConversationsScreen,
   DocumentsScreen,
   IndexingScreen,
+  KnowledgeGapsScreen,
   MembersScreen,
   OverviewScreen,
   SettingsScreen,
@@ -108,6 +109,8 @@ function LiveRoute({ screen, role, client }: {
       return <DocumentsScreen client={client} role={role} />
     case 'knowledge/indexing':
       return <IndexingScreen client={client} />
+    case 'knowledge/gaps':
+      return <KnowledgeGapsScreen client={client} role={role} />
     default:
       return null
   }
@@ -120,6 +123,7 @@ const LIVE_PATHS = new Set([
   'members',
   'knowledge/documents',
   'knowledge/indexing',
+  'knowledge/gaps',
 ])
 
 export function App({ client }: { client: SupabaseClient }) {

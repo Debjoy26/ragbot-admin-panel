@@ -23,7 +23,7 @@ export const groups = [
       screens: [
         { path: 'knowledge/documents', label: 'Documents', summary: 'Manage the files your bot can use to answer questions.', availability: 'Document management uses the approved tenant RPCs and Storage policies.' },
         { path: 'knowledge/indexing', label: 'Indexing status', summary: 'Check indexing progress and see which versions are active.', availability: 'Indexing status reads job summaries and safe version progress.' },
-        { path: 'knowledge/gaps', label: 'Knowledge gaps', summary: 'Review recurring questions that need better coverage.', availability: 'Knowledge-gap review is an A4 workflow. Gap linkage and the publishing contract are still open.' },
+        { path: 'knowledge/gaps', label: 'Knowledge gaps', summary: 'Review recurring questions that need better coverage.', availability: 'Knowledge-gap review uses the approved report plus the Markdown document pipeline. New content is retrievable only after backend activation.' },
     ],
   },
   {

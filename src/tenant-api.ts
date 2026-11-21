@@ -704,6 +704,86 @@ export function emptySettingsDraft(): Record<EditableSettingsKey, string> {
   }
 }
 
+export type KnowledgeGapRow = {
+  handoff_reason: string
+  question: string
+  occurrences: number
+  last_seen: string
+}
+
+export async function knowledgeGaps(
+  client: SupabaseClient,
+  from: string,
+  to: string,
+  limit = 50,
+): Promise<KnowledgeGapRow[]> {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to) || from > to) {
+    throw toTenantError({ code: '22023', message: 'Use a valid from/to date range' })
+  }
+  const days = Math.round((new Date(to).getTime() - new Date(from).getTime()) / 86400000) + 1
+  if (days > 92) {
+    throw toTenantError({ code: '22023', message: 'The range must not exceed 92 days' })
+  }
+  if (!Number.isInteger(limit) || limit < 1 || limit > 200) {
+    throw toTenantError({ code: '22023', message: 'The limit must be between 1 and 200' })
+  }
+  const data = await callRpc<unknown>(client, 'knowledge_gaps', { p_from: from, p_to: to, p_limit: limit })
+  if (!Array.isArray(data)) throw toTenantError({ message: 'Unexpected knowledge-gap response' })
+  return data.map((item) => {
+    if (!isRecord(item) || typeof item.question !== 'string') {
+      throw toTenantError({ message: 'Unexpected knowledge-gap response' })
+    }
+    return {
+      handoff_reason: typeof item.handoff_reason === 'string' ? item.handoff_reason : 'unknown',
+      question: item.question,
+      occurrences: typeof item.occurrences === 'number' ? item.occurrences : Number(item.occurrences) || 0,
+      last_seen: typeof item.last_seen === 'string' ? item.last_seen : '',
+    }
+  })
+}
+
+export function approvedAnswerTitle(question: string): string {
+  const normalized = question.trim().replace(/\s+/g, ' ')
+  const truncated = normalized.length > 60 ? normalized.slice(0, 60).trimEnd() : normalized
+  return 'Approved answer — ' + truncated
+}
+
+export function approvedAnswerBody(input: {
+  question: string
+  handoffReason: string
+  occurrences: number
+  lastSeen: string
+  answer: string
+}): string {
+  const lines = [
+    '# ' + approvedAnswerTitle(input.question).replace(/^Approved answer — /, ''),
+    '',
+    '> Source gap: "' + input.question.trim() + '" — ' + input.handoffReason + ', ' + input.occurrences + '×, last seen ' + input.lastSeen,
+    '> Reviewed by a workspace owner/admin. Not active until the backend confirms activation.',
+    '',
+    input.answer.trim(),
+    '',
+  ]
+  return lines.join('\n')
+}
+
+export function suggestCoveringDocuments(
+  documents: readonly { title: string }[],
+  question: string,
+): { title: string }[] {
+  const words = question.toLowerCase().split(/[^a-z0-9]+/).filter((word) => word.length > 3)
+  if (words.length === 0) return []
+  const keywords = new Set(words.slice(0, 6))
+  return documents.filter((doc) => {
+    const title = doc.title.toLowerCase()
+    let hits = 0
+    for (const word of keywords) {
+      if (title.includes(word)) hits += 1
+    }
+    return hits >= 2 || (doc.title.startsWith('Approved answer — ') && hits >= 1)
+  })
+}
+
 export function draftFromSettings(settings: BotSettings): Record<EditableSettingsKey, string> {
   return {
     display_name: settings.display_name ?? '',
