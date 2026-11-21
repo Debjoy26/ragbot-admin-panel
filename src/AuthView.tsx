@@ -19,42 +19,152 @@ export function AuthPage({ title, children }: { title: string; children: ReactNo
   )
 }
 
-export function EmailSignIn({ client, expired, redirectPath, title }: {
+export function EmailSignIn({ client, expired, redirectPath, title, allowSignup = true }: {
   client: SupabaseClient
   expired: boolean
   redirectPath?: string
   title?: string
+  allowSignup?: boolean
 }) {
-  const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'failed'>('idle')
+  const [mode, setMode] = useState<'signin' | 'signup' | 'reset' | 'check-email' | 'reset-sent'>('signin')
+  const [pending, setPending] = useState(false)
+  const [error, setError] = useState('')
 
-  async function sendLink(event: FormEvent<HTMLFormElement>) {
+  const emailRedirectTo = new URL(redirectPath ?? import.meta.env.BASE_URL, window.location.origin).href
+
+  function friendly(message: string): string {
+    if (/invalid login credentials/i.test(message)) return 'Incorrect email or password.'
+    if (/user already registered/i.test(message)) return 'An account with this email already exists. Sign in instead.'
+    return message || 'Something went wrong. Try again.'
+  }
+
+  async function signIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (state === 'sending') return
-    const email = String(new FormData(event.currentTarget).get('email')).trim()
-    const emailRedirectTo = new URL(redirectPath ?? import.meta.env.BASE_URL, window.location.origin).href
-    setState('sending')
+    if (pending) return
+    const form = new FormData(event.currentTarget)
+    setPending(true)
+    setError('')
     try {
-      const { error } = await client.auth.signInWithOtp({
-        email,
-        options: { shouldCreateUser: false, emailRedirectTo },
+      const { error: authError } = await client.auth.signInWithPassword({
+        email: String(form.get('email')).trim(),
+        password: String(form.get('password')),
       })
-      setState(error ? 'failed' : 'sent')
+      if (authError) setError(friendly(authError.message))
     } catch {
-      setState('failed')
+      setError('Could not sign in. Try again.')
+    } finally {
+      setPending(false)
     }
+  }
+
+  async function signUp(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (pending) return
+    const form = new FormData(event.currentTarget)
+    setPending(true)
+    setError('')
+    try {
+      const { data, error: authError } = await client.auth.signUp({
+        email: String(form.get('email')).trim(),
+        password: String(form.get('password')),
+        options: { emailRedirectTo },
+      })
+      if (authError) {
+        setError(friendly(authError.message))
+      } else if (!data.session) {
+        setMode('check-email')
+      }
+    } catch {
+      setError('Could not create the account. Try again.')
+    } finally {
+      setPending(false)
+    }
+  }
+
+  async function reset(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (pending) return
+    const form = new FormData(event.currentTarget)
+    setPending(true)
+    setError('')
+    try {
+      const { error: authError } = await client.auth.resetPasswordForEmail(String(form.get('email')).trim(), {
+        redirectTo: emailRedirectTo,
+      })
+      if (authError) setError(friendly(authError.message))
+      else setMode('reset-sent')
+    } catch {
+      setError('Could not send the reset email. Try again.')
+    } finally {
+      setPending(false)
+    }
+  }
+
+  function switchMode(next: 'signin' | 'signup' | 'reset') {
+    setMode(next)
+    setError('')
+  }
+
+  if (mode === 'check-email') {
+    return (
+      <AuthPage title={title ?? 'Sign in'}>
+        <p role="status">Account created. Check your email to confirm it, then sign in. Your provider administrator must activate your membership before you can access the workspace.</p>
+        <button type="button" onClick={() => switchMode('signin')}>Back to sign in</button>
+      </AuthPage>
+    )
+  }
+
+  if (mode === 'reset-sent') {
+    return (
+      <AuthPage title={title ?? 'Sign in'}>
+        <p role="status">If an account exists for that email, a password-reset link is on its way.</p>
+        <button type="button" onClick={() => switchMode('signin')}>Back to sign in</button>
+      </AuthPage>
+    )
   }
 
   return (
     <AuthPage title={title ?? 'Sign in'}>
       {expired && <p role="alert">Your session ended. Sign in again to continue.</p>}
-      <p>Enter your invited email address to request a sign-in link.</p>
-      <form onSubmit={(event) => void sendLink(event)}>
-        <label htmlFor="email">Email address</label>
-        <input id="email" name="email" type="email" autoComplete="email" required />
-        <button disabled={state === 'sending'}>{state === 'sending' ? 'Sending…' : 'Send sign-in link'}</button>
-      </form>
-      {state === 'sent' && <p role="status">Check your email for the sign-in link.</p>}
-      {state === 'failed' && <p role="alert">Could not send a sign-in link. Check your address or try again later.</p>}
+      {mode === 'signin' && (
+        <>
+          <p>Sign in with your email and password, then complete MFA if asked.</p>
+          <form onSubmit={(event) => void signIn(event)}>
+            <label htmlFor="email">Email address</label>
+            <input id="email" name="email" type="email" autoComplete="email" required />
+            <label htmlFor="password">Password</label>
+            <input id="password" name="password" type="password" autoComplete="current-password" required />
+            <button disabled={pending}>{pending ? 'Signing in…' : 'Sign in'}</button>
+          </form>
+          {allowSignup && <button type="button" className="auth-secondary" onClick={() => switchMode('signup')}>Create an account</button>}
+          <button type="button" className="auth-secondary" onClick={() => switchMode('reset')}>Forgot your password?</button>
+        </>
+      )}
+      {mode === 'signup' && (
+        <>
+          <p>Create an account. It stays inactive until your provider administrator activates your membership.</p>
+          <form onSubmit={(event) => void signUp(event)}>
+            <label htmlFor="email">Email address</label>
+            <input id="email" name="email" type="email" autoComplete="email" required />
+            <label htmlFor="password">Password</label>
+            <input id="password" name="password" type="password" autoComplete="new-password" required minLength={8} />
+            <button disabled={pending}>{pending ? 'Creating…' : 'Create account'}</button>
+          </form>
+          <button type="button" className="auth-secondary" onClick={() => switchMode('signin')}>Back to sign in</button>
+        </>
+      )}
+      {mode === 'reset' && (
+        <>
+          <p>Enter your email to receive a password-reset link.</p>
+          <form onSubmit={(event) => void reset(event)}>
+            <label htmlFor="email">Email address</label>
+            <input id="email" name="email" type="email" autoComplete="email" required />
+            <button disabled={pending}>{pending ? 'Sending…' : 'Send reset link'}</button>
+          </form>
+          <button type="button" className="auth-secondary" onClick={() => switchMode('signin')}>Back to sign in</button>
+        </>
+      )}
+      {error && <p role="alert">{error}</p>}
     </AuthPage>
   )
 }
@@ -149,7 +259,7 @@ export function AuthView({ client, access, signOut }: {
       return <MfaForm client={client} factors={access.factors} signOut={signOut} />
     case 'denied':
       return <AuthPage title="Access denied">
-        <p role="alert">Your account doesn’t have an active membership in this workspace.</p>
+        <p role="alert">Your account doesn’t have an active membership in this workspace. Ask your provider administrator to activate it.</p>
         <button type="button" onClick={signOut}>Sign out</button>
       </AuthPage>
     case 'unavailable':

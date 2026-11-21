@@ -42,12 +42,16 @@ const staff = [
   { user_id: 's2', label: 'support@example.test', role: 'provider_support', active: true },
 ]
 
+export const PROVIDER_TEST_PASSWORD = 'correct-password-1'
+
 export async function mockProvider(page: Page, options: {
   role?: 'provider_admin' | 'provider_operator' | 'provider_support' | null
   enrolled?: boolean
+  aal?: 'aal1' | 'aal2'
 } = {}) {
   const role = options.role === undefined ? 'provider_admin' : options.role
   let enrolled = options.enrolled ?? true
+  const aal = options.aal ?? 'aal2'
   const calls: string[] = []
 
   function user() {
@@ -79,7 +83,17 @@ export async function mockProvider(page: Page, options: {
     switch (url.pathname) {
       case '/auth/v1/user':
         return respond(user())
-      case '/auth/v1/otp':
+      case '/auth/v1/token':
+        if (url.searchParams.get('grant_type') !== 'password') {
+          return respond({ message: 'Unexpected mock request' }, 404)
+        } {
+          const credentials = request.postDataJSON() as { password?: string }
+          if (credentials.password !== PROVIDER_TEST_PASSWORD) {
+            return respond({ code: 'invalid_credentials', message: 'Invalid login credentials' }, 400)
+          }
+          return respond({ ...tokens(aal), user: user() })
+        }
+      case '/auth/v1/recover':
         return respond({})
       case '/auth/v1/logout':
         return route.fulfill({ status: 204, headers })

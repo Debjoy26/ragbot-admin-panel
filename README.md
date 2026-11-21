@@ -29,10 +29,12 @@ Open `http://127.0.0.1:5173/app/`. For sign-in, create
 `public/tenant-config.json` from [tenant-config.example.json](tenant-config.example.json)
 using the intended test tenant’s project URL and publishable key. Add the
 exact `/app/` URL to the tenant's Auth redirect allowlist. The tenant must
-allow email sign-in links, have public signup disabled and TOTP enabled, and
-have an invited user with active membership. The checked-in example contains
-placeholders. The app shows a configuration error until valid settings are
-available.
+enable the email provider with password sign-in and TOTP. New accounts can
+self-register and stay inactive until the provider side activates membership
+(see [ADR 0004](docs/decisions/0004-password-login.md); activation is an
+`admin_memberships` row until the member-invitation contract exists). The
+checked-in example contains placeholders. The app shows a configuration error
+until valid settings are available.
 
 For a static deployment, serve that tenant’s configuration at
 `/app/tenant-config.json`. The workspace shows live tenant data once access is

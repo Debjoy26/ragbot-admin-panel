@@ -470,7 +470,7 @@ function ProviderAuthView({ client, access, signOut }: {
         </AuthPage>
       )
     default:
-      return <EmailSignIn client={client} expired={access.kind === 'expired'} redirectPath={PROVIDER_PATH} title="Provider sign in" />
+      return <EmailSignIn client={client} expired={access.kind === 'expired'} redirectPath={PROVIDER_PATH} title="Provider sign in" allowSignup={false} />
   }
 }
 

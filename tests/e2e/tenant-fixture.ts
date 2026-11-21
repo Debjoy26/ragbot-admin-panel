@@ -150,14 +150,21 @@ const OWNER_ADMIN_RPCS = new Set([
   'admin_list_members',
 ])
 
+export const TEST_PASSWORD = 'correct-password-1'
+
 export async function mockTenant(page: Page, options: {
   role?: 'owner' | 'admin' | 'analyst' | null
   enrolled?: boolean
+  aal?: 'aal1' | 'aal2'
 } = {}) {
   let role = options.role === undefined ? 'admin' : options.role
   let enrolled = options.enrolled ?? true
+  const aal = options.aal ?? 'aal2'
   let expired = false
   const signInRequests: { create_user: boolean }[] = []
+  const passwordRequests: { email: string }[] = []
+  const signupRequests: { email: string }[] = []
+  const recoverRequests: { email: string }[] = []
 
   function user() {
     return {
@@ -193,6 +200,37 @@ export async function mockTenant(page: Page, options: {
       case '/auth/v1/otp':
         signInRequests.push(request.postDataJSON())
         return respond({})
+      case '/auth/v1/token':
+        if (url.searchParams.get('grant_type') !== 'password') {
+          return respond({ message: 'Unexpected mock request' }, 404)
+        } {
+          const credentials = request.postDataJSON() as { email?: string; password?: string }
+          passwordRequests.push({ email: String(credentials.email ?? '') })
+          if (credentials.password !== TEST_PASSWORD) {
+            return respond({ code: 'invalid_credentials', message: 'Invalid login credentials' }, 400)
+          }
+          return respond({ ...tokens(aal), user: user() })
+        }
+      case '/auth/v1/signup': {
+        const registration = request.postDataJSON() as { email?: string }
+        signupRequests.push({ email: String(registration.email ?? '') })
+        if (String(registration.email ?? '') === 'member@example.test') {
+          return respond({ code: 'user_already_exists', message: 'User already registered' }, 422)
+        }
+        return respond({ user: { ...user(), email: registration.email }, session: null })
+      }
+      case '/auth/v1/verify': {
+        const verification = request.postDataJSON() as { token_hash?: string }
+        if (verification.token_hash !== 'test-confirm') {
+          return respond({ code: 'bad_token', message: 'Token has expired or is invalid' }, 403)
+        }
+        return respond({ ...tokens('aal1'), user: user() })
+      }
+      case '/auth/v1/recover': {
+        const recovery = request.postDataJSON() as { email?: string }
+        recoverRequests.push({ email: String(recovery.email ?? '') })
+        return respond({})
+      }
       case '/auth/v1/logout':
         return route.fulfill({ status: 204, headers })
       case '/auth/v1/factors':
@@ -287,12 +325,22 @@ export async function mockTenant(page: Page, options: {
     revoke: () => { role = null },
     expire: () => { expired = true },
     signInRequests,
+    passwordRequests,
+    signupRequests,
+    recoverRequests,
   }
+}
+
+export async function signInWithPassword(page: Page, path = '/app/', password = TEST_PASSWORD) {
+  await page.goto(path)
+  await page.getByLabel('Email address').fill('member@example.test')
+  await page.getByLabel('Password').fill(password)
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click()
 }
 
 export async function openWorkspace(page: Page, path?: string) {
   await mockTenant(page)
-  await page.goto(signInLink(path))
+  await signInWithPassword(page, path)
   await expect(page.getByRole('navigation', { name: 'Client navigation' })).toBeVisible()
 }
 

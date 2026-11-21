@@ -25,6 +25,33 @@ function showInvalidLink() {
   )
 }
 
+type RecoveryCallback = { token_hash: string; type: 'signup' | 'recovery' | 'email_change' | 'invite' }
+
+function takeRecoveryCallback(): RecoveryCallback | null {
+  const params = new URL(window.location.href).searchParams
+  const token_hash = params.get('token_hash')
+  const type = params.get('type')
+  if (!token_hash || (type !== 'signup' && type !== 'recovery' && type !== 'email_change' && type !== 'invite')) {
+    return null
+  }
+  window.history.replaceState(window.history.state, '', window.location.pathname)
+  return { token_hash, type }
+}
+
+async function exchangeRecoveryCallback(client: SupabaseClient, callback: RecoveryCallback): Promise<boolean> {
+  try {
+    const { error } = await client.auth.verifyOtp({ token_hash: callback.token_hash, type: callback.type })
+    if (error) {
+      showInvalidLink()
+      return false
+    }
+    return true
+  } catch {
+    showInvalidLink()
+    return false
+  }
+}
+
 async function setCallbackSession(client: SupabaseClient, callback: { access_token: string; refresh_token: string }) {
   try {
     const result = await client.auth.setSession({
@@ -48,7 +75,10 @@ function providerPath(): boolean {
   return pathname === base + '/provider' || pathname.startsWith(base + '/provider/')
 }
 
-async function startProvider(callback: ReturnType<typeof takeAuthCallback>) {
+async function startProvider(
+  callback: ReturnType<typeof takeAuthCallback>,
+  recovery: RecoveryCallback | null,
+) {
   appRoot.render(
     <AuthPage title="Loading provider">
       <p role="status">Checking provider configuration…</p>
@@ -70,6 +100,7 @@ async function startProvider(callback: ReturnType<typeof takeAuthCallback>) {
   }
 
   const client = createProviderClient(config)
+  if (recovery && !(await exchangeRecoveryCallback(client, recovery))) return
   if (callback.kind === 'tokens' && !(await setCallbackSession(client, callback))) return
 
   appRoot.render(
@@ -82,9 +113,10 @@ async function startProvider(callback: ReturnType<typeof takeAuthCallback>) {
 }
 
 async function start() {
+  const recovery = takeRecoveryCallback()
   const callback = takeAuthCallback()
   if (providerPath()) {
-    await startProvider(callback)
+    await startProvider(callback, recovery)
     return
   }
 
@@ -101,6 +133,7 @@ async function start() {
   }
 
   const client = createTenantClient(config)
+  if (recovery && !(await exchangeRecoveryCallback(client, recovery))) return
   if (callback.kind === 'tokens' && !(await setCallbackSession(client, callback))) return
 
   appRoot.render(

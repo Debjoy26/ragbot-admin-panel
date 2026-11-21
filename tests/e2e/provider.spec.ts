@@ -15,9 +15,13 @@ test('requires sign-in on provider routes', async ({ page }) => {
   await expect(page.getByRole('navigation')).toHaveCount(0)
 })
 
-test('signs in with MFA and lists registry clients', async ({ page }) => {
-  await mockProvider(page)
-  await page.goto(providerSignInLink('/app/provider', 'aal1'))
+test('signs in with password and MFA and lists registry clients', async ({ page }) => {
+  await mockProvider(page, { aal: 'aal1' })
+  await page.goto('/app/provider')
+  await expect(page.getByRole('heading', { name: 'Provider sign in' })).toBeVisible()
+  await page.getByLabel('Email address').fill('op@example.test')
+  await page.getByLabel('Password').fill('correct-password-1')
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Verify your sign-in' })).toBeVisible()
   await page.getByLabel('Authenticator code').fill('123456')
   await page.getByRole('button', { name: 'Verify code' }).click()

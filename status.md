@@ -157,6 +157,26 @@ Ran on Windows with Node `26.13.1` and npm `11.20.0`. The scaffold follows the a
 
 The scaffold renders the accepted superadmin surface: client registry with search, client detail with admin-only suspend/restore behind confirmation, provider audit, and read-only staff list. Operators and support are read-only; suspend/restore requires `provider_admin`. No fixture clients ship in the bundle; without a live provider API the screens report the API as unreachable instead of showing data. Interim note: the scaffold shares the client build artifact under `/app/provider`; the split provider deployment from ADR 0002 remains due at A7a wiring time. No provider code may claim enforcement until the API contract and server checks exist and are tested.
 
+## Auth method change (ADR 0004)
+
+Ran on Windows with Node `26.13.1` and npm `11.20.0`. Magic-link sign-in is
+replaced by email plus password (`signInWithPassword`), with panel-side
+account creation (`signUp`) and password reset. New accounts stay
+unauthorized until the provider side activates membership; MFA at `aal2`
+remains mandatory for private access. Confirmation and reset callbacks are
+exchanged with `verifyOtp`.
+
+| Command | Result |
+|---|---|
+| `npm run lint` and `npm run typecheck` | Passed |
+| `npm test` | 41 unit tests passed |
+| `npm run build` | Passed |
+| `npm run test:e2e` | 27 Chromium tests passed (password sign-in, wrong credentials, signup plus confirmation, reset, and MFA flows with mocked tenant responses) |
+
+Tenant Auth prerequisites change accordingly: enable the email provider with
+password sign-in and TOTP, decide signup policy, and keep the panel URL in the
+redirect allowlist for confirmation and reset links.
+
 ## Approval boundary
 
 Hosted Supabase writes, AWS provisioning, paid provider calls, production deployment, and

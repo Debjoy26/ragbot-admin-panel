@@ -33,7 +33,8 @@ Provider identity provider, session format, and control API are open decisions.
 ## Client sign-in and MFA implementation
 
 - Load public project configuration from `/app/tenant-config.json` before creating the browser SDK client.
-- Send email sign-in links for existing users with `shouldCreateUser: false`. Accept invite and magic-link callbacks on the panel origin. Remove callback tokens from the browser URL before rendering or making requests.
+- Sign users in with email plus password (`signInWithPassword`). Offer account creation (`signUp`) for inert accounts and password reset (`resetPasswordForEmail`); both send one-time account emails only. Accept confirmation and reset callbacks carrying `token_hash` on the panel origin, exchange them with `verifyOtp`, and strip them from the browser URL before rendering or making requests. The panel never sends sign-in links.
+- New accounts are unauthorized until the provider side activates membership (ADR 0004). The access-denied state directs users to their provider administrator.
 - Keep the session in memory. Validate the user with Auth and confirm `aal2` and the active role through `is_active_member_mfa` before rendering the client shell. Use `is_active_member` to gate TOTP enrollment and challenges at `aal1`.
 - Recheck access on session changes, on window focus, and every 30 seconds while a session exists. Unmount the private shell when access expires, membership is lost, or verification fails. The backend evaluates authorization on its own requests.
 

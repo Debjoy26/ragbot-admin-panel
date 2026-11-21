@@ -8,15 +8,42 @@ test('fails closed without tenant configuration', async ({ page }) => {
   await expect(page.getByRole('navigation')).toHaveCount(0)
 })
 
-test('guards direct routes and requests sign-in for existing accounts only', async ({ page }) => {
+test('guards direct routes and rejects wrong credentials', async ({ page }) => {
   const tenant = await mockTenant(page)
   await page.goto('/app/knowledge/gaps')
   await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible()
   await expect(page.getByRole('navigation')).toHaveCount(0)
   await page.getByLabel('Email address').fill('member@example.test')
-  await page.getByRole('button', { name: 'Send sign-in link' }).click()
-  await expect(page.getByRole('status')).toContainText('Check your email')
-  expect(tenant.signInRequests[0]?.create_user).toBe(false)
+  await page.getByLabel('Password').fill('wrong-password')
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click()
+  await expect(page.getByRole('alert')).toContainText('Incorrect email or password')
+  expect(tenant.passwordRequests).toHaveLength(1)
+})
+
+test('creates an account and confirms it before MFA', async ({ page }) => {
+  const tenant = await mockTenant(page)
+  await page.goto('/app/')
+  await page.getByRole('button', { name: 'Create an account' }).click()
+  await page.getByLabel('Email address').fill('new@example.test')
+  await page.getByLabel('Password').fill('correct-password-1')
+  await page.getByRole('button', { name: 'Create account' }).click()
+  await expect(page.getByRole('status')).toContainText('Account created')
+  expect(tenant.signupRequests[0]?.email).toBe('new@example.test')
+  await page.goto('/app/?token_hash=test-confirm&type=signup')
+  await expect(page.getByRole('heading', { name: 'Verify your sign-in' })).toBeVisible()
+  await page.getByLabel('Authenticator code').fill('123456')
+  await page.getByRole('button', { name: 'Verify code' }).click()
+  await expect(page.getByText('Client workspace · admin')).toBeVisible()
+})
+
+test('sends a password-reset link', async ({ page }) => {
+  const tenant = await mockTenant(page)
+  await page.goto('/app/')
+  await page.getByRole('button', { name: 'Forgot your password?' }).click()
+  await page.getByLabel('Email address').fill('member@example.test')
+  await page.getByRole('button', { name: 'Send reset link' }).click()
+  await expect(page.getByRole('status')).toContainText('password-reset link is on its way')
+  expect(tenant.recoverRequests[0]?.email).toBe('member@example.test')
 })
 
 test('removes tokens from invalid callback URLs', async ({ page }) => {
