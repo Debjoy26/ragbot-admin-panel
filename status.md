@@ -29,8 +29,25 @@ Markdown document pipeline, pending owner acceptance of the local validation.
 | A4 — approved knowledge workflow | Complete | Gap review plus Markdown approved-answer submission; pending owner acceptance of the local validation |
 | A5 — widget key lifecycle | Not started | Current widget uses public bot/configuration attributes; dedicated key is not assumed |
 | A6 — subscription integration | Not started | Current bot enablement is not a complete subscription lifecycle |
-| A7 — provider administration | Design accepted; frontend scaffold built | Owner accepted ADR 0003. The `/app/provider` scaffold (staff sign-in/MFA, role gates, registry, detail with admin-only suspend/restore, audit, staff) is validated against mocked API responses. Live wiring (A7a) still needs the staff identity project, provider API + registry, and the API repository decision |
+| A7 — provider administration | Design accepted + amended; frontend scaffold built | Owner accepted ADR 0003 plus the activation-gating and client-held grant amendments. The `/app/provider` scaffold (staff sign-in/MFA, role gates, registry, detail with admin-only suspend/restore, audit, staff) is validated against mocked API responses. Live wiring (A7a) still needs the staff identity project, provider API + registry, and the API repository decision |
 | A8 — release/deployment | Not started | Hosting and release gates are not selected |
+
+## Implementation status (2026-11-21)
+
+Rough accounting of what exists as running code versus design/paper. Percentages are honest approximations, not gates.
+
+| Area | Implemented | Still pending | Done |
+|---|---|---|---|
+| Client login (password + TOTP + membership/role gates) | Live against the real tenant backend | — | ~100% |
+| Client admin (A3: overview, settings, documents, indexing, conversations, usage, members) | Live; member list is read-only by design | Member invitations need contract #8 | ~95% |
+| Knowledge gaps + approved answers (A4) | Built, validated (41 unit / 27 e2e green) | Owner acceptance of the validation | ~95% |
+| Provider design (ADR 0003 + activation-gating + grant amendments) | Accepted | API repository choice | ~90% |
+| Provider panel frontend (`/app/provider`: sign-in, registry, detail, audit, staff) | Scaffold built, validated vs mocked API; live demo via local stub | Live wiring to real API | ~60% of frontend |
+| Provider backend (staff identity, API, registry, audit store) | Nothing | Everything (A7a–A7c) | 0% |
+| Grant mechanism (client grant buttons, provider request flow, enforcement) | Design only | Tenant migration + both UIs + API checks | 0% built |
+| Widget keys (A5), subscription enforcement (A6), release (A8) | Placeholders only | Contracts + hosting + SMTP + secrets hygiene | 0% |
+
+Bottom line: the client product is essentially complete and live. The provider product is designed and its screens exist, but every provider screen showing live multi-client data waits on one backend build. Nothing anywhere is faked silently: unbuilt backends surface as explicit unavailable/deferred states, except the local demo stub which is labeled and never committed.
 
 ## Open decisions
 
