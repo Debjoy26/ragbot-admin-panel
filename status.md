@@ -29,15 +29,15 @@ Markdown document pipeline, pending owner acceptance of the local validation.
 | A4 — approved knowledge workflow | Complete | Gap review plus Markdown approved-answer submission; pending owner acceptance of the local validation |
 | A5 — widget key lifecycle | Not started | Current widget uses public bot/configuration attributes; dedicated key is not assumed |
 | A6 — subscription integration | Not started | Current bot enablement is not a complete subscription lifecycle |
-| A7 — provider administration | Not started | Provider identity/API/registry design is open |
+| A7 — provider administration | Accepted design, not built | Owner accepted ADR 0003 (provider as superadmin, identity/API/registry/audit baseline). A7a build starts once the provider API repository is confirmed and the staff identity plus registry exist |
 | A8 — release/deployment | Not started | Hosting and release gates are not selected |
 
 ## Open decisions
 
 1. Choose the hosting account and production domains before release.
-2. Provider identity provider, MFA policy, provider roles, and staff recovery.
-3. Owner and repository for provider API and provider registry.
-4. Provider access to client conversations/documents and required audit/consent.
+2. Accepted in ADR 0003: dedicated provider staff domain with TOTP MFA, server-side provider roles including the superadmin definition, and a documented break-glass recovery owned by the provider API owner.
+3. Accepted in ADR 0003: provider control API plus provider-owned registry. Remaining: confirm the owning repository (new service repository or `ragbot-widget` server component).
+4. Accepted in ADR 0003: superadmin client control with default-deny on private conversations/documents; permitted access needs per-action grant, purpose/consent record, and purpose-specific audit.
 5. Subscription states, start/end semantics, grace period, limits, and
    authoritative enforcement location.
 6. Public widget-key format, hashing, hostname restriction, rotation, and
