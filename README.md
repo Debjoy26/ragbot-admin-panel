@@ -39,6 +39,19 @@ For a static deployment, serve that tenant’s configuration at
 verified. Sessions are stored in memory, so a full reload requires signing in
 again.
 
+## Provider scaffold (A7, design accepted)
+
+The provider superadmin scaffold lives under `/app/provider/`. For local work,
+create `public/provider-config.json` from [provider-config.example.json](provider-config.example.json)
+with the provider API base URL plus the dedicated staff project's URL and
+publishable key. The scaffold covers staff sign-in/MFA, role gates, the client
+registry, client detail with admin-only suspend/restore, audit, and staff. It
+fails closed without configuration and reports an unreachable API instead of
+showing data. Live wiring needs the staff identity project and the provider
+API + registry from ADR 0003; the split provider deployment remains due at
+that time. Never put service-role, provider, or other server secrets in this
+configuration.
+
 ```sh
 npm run lint
 npm run typecheck

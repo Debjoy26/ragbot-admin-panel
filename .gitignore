@@ -8,3 +8,4 @@ test-results/
 .env.*
 !.env.example
 /public/tenant-config.json
+/public/provider-config.json

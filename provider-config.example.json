@@ -1,0 +1,5 @@
+{
+  "apiBaseUrl": "https://provider-api.example.com",
+  "supabaseUrl": "https://your-staff-project.supabase.co",
+  "supabasePublishableKey": "sb_publishable_replace_me"
+}

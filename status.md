@@ -29,7 +29,7 @@ Markdown document pipeline, pending owner acceptance of the local validation.
 | A4 — approved knowledge workflow | Complete | Gap review plus Markdown approved-answer submission; pending owner acceptance of the local validation |
 | A5 — widget key lifecycle | Not started | Current widget uses public bot/configuration attributes; dedicated key is not assumed |
 | A6 — subscription integration | Not started | Current bot enablement is not a complete subscription lifecycle |
-| A7 — provider administration | Accepted design, not built | Owner accepted ADR 0003 (provider as superadmin, identity/API/registry/audit baseline). A7a build starts once the provider API repository is confirmed and the staff identity plus registry exist |
+| A7 — provider administration | Design accepted; frontend scaffold built | Owner accepted ADR 0003. The `/app/provider` scaffold (staff sign-in/MFA, role gates, registry, detail with admin-only suspend/restore, audit, staff) is validated against mocked API responses. Live wiring (A7a) still needs the staff identity project, provider API + registry, and the API repository decision |
 | A8 — release/deployment | Not started | Hosting and release gates are not selected |
 
 ## Open decisions
@@ -143,6 +143,19 @@ queued and not retrievable until backend activation; Documents and Indexing
 status remain the activation source of truth. Analysts review gaps read-only.
 Gap-to-answer linkage is the title plus source-gap blockquote convention, and
 covering-document hints are a local title heuristic, not a backend link.
+
+## A7 provider scaffold validation
+
+Ran on Windows with Node `26.13.1` and npm `11.20.0`. The scaffold follows the accepted ADR 0003 contract: staff sign-in plus TOTP MFA against a dedicated provider project, role from the provider API `/v1/me`, and fail-closed gates (no config, expired session, denied role, and unreachable API are explicit states). The client app is untouched; provider callbacks are routed to the provider branch in `main.tsx`.
+
+| Command | Result |
+|---|---|
+| `npm run lint` and `npm run typecheck` | Passed |
+| `npm test` | 41 unit tests passed (33 client + 8 provider) |
+| `npm run build` | Passed |
+| `npm run test:e2e` | 25 Chromium tests passed (18 client + 7 provider with mocked provider API) |
+
+The scaffold renders the accepted superadmin surface: client registry with search, client detail with admin-only suspend/restore behind confirmation, provider audit, and read-only staff list. Operators and support are read-only; suspend/restore requires `provider_admin`. No fixture clients ship in the bundle; without a live provider API the screens report the API as unreachable instead of showing data. Interim note: the scaffold shares the client build artifact under `/app/provider`; the split provider deployment from ADR 0002 remains due at A7a wiring time. No provider code may claim enforcement until the API contract and server checks exist and are tested.
 
 ## Approval boundary
 

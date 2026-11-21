@@ -19,14 +19,19 @@ export function AuthPage({ title, children }: { title: string; children: ReactNo
   )
 }
 
-function EmailSignIn({ client, expired }: { client: SupabaseClient; expired: boolean }) {
+export function EmailSignIn({ client, expired, redirectPath, title }: {
+  client: SupabaseClient
+  expired: boolean
+  redirectPath?: string
+  title?: string
+}) {
   const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'failed'>('idle')
 
   async function sendLink(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (state === 'sending') return
     const email = String(new FormData(event.currentTarget).get('email')).trim()
-    const emailRedirectTo = new URL(import.meta.env.BASE_URL, window.location.origin).href
+    const emailRedirectTo = new URL(redirectPath ?? import.meta.env.BASE_URL, window.location.origin).href
     setState('sending')
     try {
       const { error } = await client.auth.signInWithOtp({
@@ -40,7 +45,7 @@ function EmailSignIn({ client, expired }: { client: SupabaseClient; expired: boo
   }
 
   return (
-    <AuthPage title="Sign in">
+    <AuthPage title={title ?? 'Sign in'}>
       {expired && <p role="alert">Your session ended. Sign in again to continue.</p>}
       <p>Enter your invited email address to request a sign-in link.</p>
       <form onSubmit={(event) => void sendLink(event)}>
@@ -54,7 +59,7 @@ function EmailSignIn({ client, expired }: { client: SupabaseClient; expired: boo
   )
 }
 
-function MfaForm({ client, factors, signOut }: {
+export function MfaForm({ client, factors, signOut }: {
   client: SupabaseClient
   factors: Extract<Access, { kind: 'mfa' }>['factors']
   signOut: () => void
