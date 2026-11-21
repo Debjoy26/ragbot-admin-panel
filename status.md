@@ -14,9 +14,8 @@ A2 is complete. The product owner accepted the sign-in, TOTP MFA, membership
 checks, and role guards after local validation passed. The product owner accepted
 the live overview, settings, documents, indexing status, conversations, usage,
 and members integration after local validation passed.
-A4 is complete. The knowledge-gap review and approved-answer workflow are
-implemented against the reviewed `knowledge_gaps` report plus the ordinary
-Markdown document pipeline, pending owner acceptance of the local validation.
+A4 is complete. The product owner accepted the knowledge-gap review and
+approved-answer workflow after local validation passed.
 
 ## Phase tracker
 
@@ -26,7 +25,7 @@ Markdown document pipeline, pending owner acceptance of the local validation.
 | A1 — frontend scaffold | Complete | Owner accepted the client shell and routes after lint, typecheck, unit tests, build, and browser checks passed |
 | A2 — client auth/MFA | Complete | Owner accepted after local checks and a smoke test against Supabase schema 27 passed |
 | A3 — client admin features | Complete | Owner accepted the live admin integration after lint, typecheck, unit tests, build, and browser checks passed |
-| A4 — approved knowledge workflow | Complete | Gap review plus Markdown approved-answer submission; pending owner acceptance of the local validation |
+| A4 — approved knowledge workflow | Complete | Owner accepted gap review plus Markdown approved-answer submission after local validation passed |
 | A5 — widget key lifecycle | Not started | Current widget uses public bot/configuration attributes; dedicated key is not assumed |
 | A6 — subscription integration | Not started | Current bot enablement is not a complete subscription lifecycle |
 | A7 — provider administration | Design accepted + amended; frontend scaffold built | Owner accepted ADR 0003 plus the activation-gating and client-held grant amendments. The `/app/provider` scaffold (staff sign-in/MFA, role gates, registry, detail with admin-only suspend/restore, audit, staff) is validated against mocked API responses. Live wiring (A7a) still needs the staff identity project, provider API + registry, and the API repository decision |
@@ -40,7 +39,7 @@ Rough accounting of what exists as running code versus design/paper. Percentages
 |---|---|---|---|
 | Client login (password + TOTP + membership/role gates) | Live against the real tenant backend | — | ~100% |
 | Client admin (A3: overview, settings, documents, indexing, conversations, usage, members) | Live; member list is read-only by design | Member invitations need contract #8 | ~95% |
-| Knowledge gaps + approved answers (A4) | Built, validated (41 unit / 27 e2e green) | Owner acceptance of the validation | ~95% |
+| Knowledge gaps + approved answers (A4) | Built, validated (41 unit / 27 e2e green), owner-accepted | — | Complete |
 | Provider design (ADR 0003 + activation-gating + grant amendments) | Accepted | API repository choice | ~90% |
 | Provider panel frontend (`/app/provider`: sign-in, registry, detail, audit, staff) | Scaffold built, validated vs mocked API; live demo via local stub | Live wiring to real API | ~60% of frontend |
 | Provider backend (staff identity, API, registry, audit store) | Nothing | Everything (A7a–A7c) | 0% |
