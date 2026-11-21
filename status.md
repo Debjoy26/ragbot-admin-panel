@@ -52,7 +52,7 @@ Bottom line: the client product is essentially complete and live. The provider p
 
 1. Choose the hosting account and production domains before release.
 2. Accepted in ADR 0003: dedicated provider staff domain with TOTP MFA, server-side provider roles including the superadmin definition, and a documented break-glass recovery owned by the provider API owner.
-3. Accepted in ADR 0003: provider control API plus provider-owned registry. Remaining: confirm the owning repository (new service repository or `ragbot-widget` server component).
+3. Accepted in ADR 0003: provider control API plus provider-owned registry. Decided 2026-11-21: isolated server component of `ragbot-widget` (own folder, deploy, and project/database).
 4. Accepted in ADR 0003: superadmin client control with default-deny on private conversations/documents; permitted access needs per-action grant, purpose/consent record, and purpose-specific audit.
 5. Subscription states, start/end semantics, grace period, limits, and
    authoritative enforcement location.
