@@ -50,7 +50,11 @@ Bottom line: the client product is essentially complete and live. The provider p
 
 ## Open decisions
 
-1. Choose the hosting account and production domains before release.
+1. Choose the hosting account and production domains before release. Note
+   2026-11-24: Vercel Hobby is non-commercial, so a client-facing panel needs
+   Pro/self-hosted static delivery; the widget backend records an AWS
+   alternative (S3 + CloudFront for static frontends) as Proposed in
+   `ragbot-widget` ADR 0021.
 2. Accepted in ADR 0003: dedicated provider staff domain with TOTP MFA, server-side provider roles including the superadmin definition, and a documented break-glass recovery owned by the provider API owner.
 3. Accepted in ADR 0003: provider control API plus provider-owned registry. Decided 2026-11-21: isolated server component of `ragbot-widget` (own folder, deploy, and project/database).
 4. Accepted in ADR 0003: superadmin client control with default-deny on private conversations/documents; permitted access needs per-action grant, purpose/consent record, and purpose-specific audit.
@@ -66,6 +70,10 @@ Bottom line: the client product is essentially complete and live. The provider p
 9. Confirm knowledge-gap retention and any additional privacy requirements for analyst access.
 10. Scope later UI localization beyond the initial English UI.
 11. Settle deployment commands at release planning.
+12. Resolve the signup-policy conflict before P12: ADR 0004 allows
+    self-registration (accounts inert until provider activation) while the
+    backend P12 runbook prescribes public signup off plus `make first-admin`.
+    Recorded 2026-11-24; owner decision needed.
 
 ## Backend contract notes
 
@@ -77,6 +85,13 @@ Bottom line: the client product is essentially complete and live. The provider p
 - Widget identifier rotation/revocation and subscription lifecycle are not
   assumed implemented.
 - No provider control plane is assumed to exist.
+- Backend changes 2026-11-24 (widget `main`, unreleased): default chat model
+  moved to `gemini-3.5-flash-lite` (2.5 retired for new keys; paid-tier prices
+  now $0.30/$2.50 per 1M), citation markers accept comma-separated multi-ID
+  form, all-dropped citations are logged. No migration, schema, RPC, or RLS
+  change: the pinned contract surface is intact, but panel checks have not
+  been re-run against the new backend code — re-validate before connecting a
+  hosted tenant.
 
 ## A0 checkpoint
 
