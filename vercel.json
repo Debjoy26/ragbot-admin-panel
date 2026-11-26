@@ -1,0 +1,8 @@
+{
+  "$comment": "Vite base is /app/: serve assets under /app/ and fall back client routes to index.html. Root redirects to /app/.",
+  "redirects": [{ "source": "/", "destination": "/app/" }],
+  "rewrites": [
+    { "source": "/app/assets/:path*", "destination": "/assets/:path*" },
+    { "source": "/app/:path*", "destination": "/index.html" }
+  ]
+}
