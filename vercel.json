@@ -1,6 +1,8 @@
 {
   "rewrites": [
     { "source": "/app/assets/:path*", "destination": "/assets/:path*" },
+    { "source": "/app/tenant-config.json", "destination": "/tenant-config.json" },
+    { "source": "/app/provider-config.json", "destination": "/provider-config.json" },
     { "source": "/app", "destination": "/index.html" },
     { "source": "/app/", "destination": "/index.html" },
     { "source": "/app/:path*", "destination": "/index.html" }
